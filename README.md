@@ -25,7 +25,7 @@ Usage
 -----
 MPDC needs something to search for, either a regexp for an artist (-a) or regexp for genre tags (-g) . For example,
 
-    mpdc.rb ~/src/mpdc/mpdc.rb -l 15 -g '^(riot grrr|punk)$' -e
+    mpdc.rb ~/src/mpdc/mpdc.rb -l 15 -g '^(riot grrrl|punk)$' -e
 
 adds 15 tracks of punk and riot grrrl music to the end of the current mpd playlist
 

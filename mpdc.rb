@@ -81,9 +81,6 @@ class PlaylistCreator
       opts.on('-e','--end','insert tracks at end of playlist (default:replace current playlist)') do
         options[:playlist_position]='end'
       end
-      # opts.on('-n','--next','insert tracks after currently playing song (default:replace current playlist)') do
-      #   options[:playlist_position]='next'
-      # end
       opts.on('-s','--shuffle','shuffle mpd playlist after insertation') do
         options[:shuffle_mpd]=true
       end
@@ -391,7 +388,5 @@ if __FILE__ == $0
   pg_result.clear()
 
 end
-
-puts creator.inspect
 
 exit
