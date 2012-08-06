@@ -23,15 +23,17 @@ return, as well as where in the mpd playlist the tracks should be inserted Usage
 
 Usage
 -----
-MPDC needs something to search for, either a regexp for an artist (-a) or regexp for genre tags (-g) . For example,
 
-    mpdc.rb ~/src/mpdc/mpdc.rb -l 15 -g '^(riot grrrl|punk)$' -e
+MPDC needs something to search for, either a regexp for an artist (-a) or regexp
+for genre tags (-g) . For example,
+
+    mpdc.rb -l 15 -g '^(riot grrrl|punk)$' -e
 
 adds 15 tracks of punk and riot grrrl music to the end of the current mpd playlist
 
 Full list of options:
 
-    Usage: /home/mang/src/mpdc/git/mpdc.rb [options] [-a <artist_regexp>|-g <genre_regexp>]
+    Usage: mpdc.rb [options] [-a <artist_regexp>|-g <genre_regexp>]
         -a, --artist <regexp>            base playlist creation on regular expression for artist
         -t, --top-tracks                 select top ranked tracks for artist (only with -a) (default for -a)
         -r, --related                    select tracks from artist related to artist (only with -a) (implies -s)
@@ -55,7 +57,9 @@ Full list of options:
         -V, --version                    print version
         -h, --help                       display this help screen
 
-If present, the client also reads the file ~/.mpdcrc for configuration. The file should be in standard unix config format, as key="value". Accepted keys and values are
+If present, the client also reads the file ~/.mpdcrc for configuration. The file
+should be in standard unix config format, as key="value". Accepted keys and values
+are:
 
     track_selection       = toptracks|related|genres|list_genres
     playlist_position     = replace|end
@@ -73,3 +77,6 @@ If present, the client also reads the file ~/.mpdcrc for configuration. The file
     dryrun                = true
     verbose               = true
     music_dir
+
+#### Contact
+mang(a)mang.se
