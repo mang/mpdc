@@ -8,6 +8,8 @@ does not require Subsonic to be running, MusicCabinet does in order to (at least
 in an convenient way) create and update the database. Therefore MPDC is not much
 usefull without running Subsonic. What does it do?
 
+What does it do?
+----------------
 MPDC implements some of the featueres of MusicCabinet into MPD by providing a
 simple cli client that lets the user searches for artists or genre tags to create
 playlist based on. The behaviour can be modified to select
@@ -19,6 +21,8 @@ playlist based on. The behaviour can be modified to select
 The user may also specify how many tracks, how many tracks per artist mpdc should
 return, as well as where in the mpd playlist the tracks should be inserted Usage
 
+Usage
+-----
 MPDC needs either -a or -g . For example,
 
     mpdc.rb ~/src/mpdc/mpdc.rb -l 15 -g '^(riot grrr|punk)$' -e
