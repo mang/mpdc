@@ -89,6 +89,7 @@ class PlaylistCreator
         options[:genre_regexp]=genre_regexp
       end
       opts.on('-G','--list-genres <regexp>','search for represented genres tags') do|genre_regexp|
+        options[:mode]='genres'
         options[:track_selection]='list_genres'
         options[:genre_regexp]=genre_regexp
       end
@@ -189,23 +190,40 @@ class PlaylistCreator
         puts "[%s] %s" % [count,pg_result[count]['artist_name_capitalization']]
         count=count+1
       end
-      print "There %s matches for \"%s\", please choose a number [0-%s]: " % [rows,@options[:artist],rows-1]
+      if @options[:track_selection] == 'toptracks'
+        choice="[0-"+(rows-1).to_s+"|nil=all]"
+      else
+        choice="[0-"+(rows-1).to_s+"]"
+      end
+      print "There %s matches for \"%s\", please choose a number %s: " % [rows,@options[:artist],choice]
       num=STDIN.gets.chop
       if num.empty?
-        abort("No number choosen")
+        if @options[:track_selection] == 'toptracks'
+          artist={
+            :ids=>pg_result.field_values('id').map{|x| "#{x}"}.join(','),
+            :names=>pg_result.field_values('artist_name_capitalization').map{|x| "'#{x}'"}.join(', ')
+          }
+        else
+          abort('you must choose ONE number')
+        end
       else
         num=Integer(num)
+        artist={
+          :ids=>pg_result[num]['id'],
+          :names=>pg_result[num]['artist_name_capitalization']
+        }
       end
-      artist_id=pg_result[num]['id']
-      artist_name=pg_result[num]['artist_name_capitalization']
     elsif rows>0
-      artist_id=pg_result[0]['id']
-      artist_name=pg_result[0]['artist_name_capitalization']
+      artist={
+        :ids=>pg_result[0]['id'],
+        :names=>pg_result[0]['artist_name_capitalization']
+      }
+    else
+      abort_msg='No match for artist regexp "/%s/"' %
+        [@options[:artist]]
+      abort(abort_msg)
     end
-    artist={
-      :id => artist_id,
-      :name => artist_name
-    }
+    artist
   end
 
   def get_top_tracks(artist_id)
@@ -221,9 +239,9 @@ class PlaylistCreator
                         'INNER JOIN music.album al ON lt.album_id = al.id '+
                         'INNER JOIN library.file f ON lt.file_id = f.id '+
                         'INNER JOIN library.directory d ON f.directory_id  = d.id '+
-                        'WHERE att.artist_id = $1 '+
+                        'WHERE att.artist_id = any($1) '+
                         'ORDER BY rank ASC LIMIT $2',
-                        [artist_id,
+                        ["{"+artist_id+"}",
                          @options[:track_limit]])
   end
 
@@ -303,6 +321,11 @@ end
 
 if __FILE__ == $0
 
+  trap("INT") do
+    puts "\ngot INT signal, quitting"
+    Kernel.exit(0)
+  end
+
   creator=PlaylistCreator.new()
   creator.parse_config
   creator.parse_options
@@ -312,37 +335,29 @@ if __FILE__ == $0
   case creator.get_option('track_selection')
   when 'toptracks'
     artist=creator.get_artist()
-    puts "==> Selecting top %s tracks for artist \"%s\"" %
+    plural = "s" if artist.count>1
+    puts "==> Selecting top %s tracks for artist%s %s" %
       [creator.get_option('track_limit'),
-       artist[:name]]
-    if artist[:id].nil?
-      abort_msg='No match for artist regexp "/%s/"' %
-        [creator.get_option('artist')]
-      abort(abort_msg)
-    end
-    pg_result=creator.get_top_tracks(artist[:id])
+       plural,
+       artist[:names]]
+    pg_result=creator.get_top_tracks(artist[:ids])
   when 'related'
     artist=creator.get_artist()
-    puts "==> Selecting %s tracks from artists related to \"%s\"" %
+    puts "==> Selecting %s tracks from artists related to %s" %
       [creator.get_option('track_limit'),
-       artist[:name]]
-    if artist[:id].nil?
-      abort_msg='No match for artist regexp "/%s/"' %
-        [creator.get_option('artist')]
-      abort(abort_msg)
-    end
-    pg_result=creator.get_related_tracks(artist[:id])
+       artist[:names]]
+    pg_result=creator.get_related_tracks(artist[:ids])
   when 'genres'
-    genre_list=creator.get_genre_list(creator.get_option('genre_regexp'))
-    if genre_list.count==0
+    pg_result=creator.get_genre_list(creator.get_option('genre_regexp'))
+    if pg_result.count==0
       abort_msg='No match for genre tag regexp "/%s/"' %
         [creator.get_option('genre_regexp')]
       abort(abort_msg)
     end      
-    genres=genre_list.values()
+    genres=pg_result.values()
     puts "==> Selecting %s tracks with genre tags %s" %
       [creator.get_option('track_limit'),
-       genre_list.map{|x| "\"#{x['tag_name']}\""}.join(', ')]
+       pg_result.map{|x| "\"#{x['tag_name']}\""}.join(', ')]
     pg_result=creator.get_genre_tracks(genres)
   when 'list_genres'
     pg_result=creator.get_genre_list(creator.get_option('genre_regexp'))
