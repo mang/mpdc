@@ -89,7 +89,6 @@ class PlaylistCreator
         options[:genre_regexp]=genre_regexp
       end
       opts.on('-G','--list-genres <regexp>','search for represented genres tags') do|genre_regexp|
-        options[:mode]='genres'
         options[:track_selection]='list_genres'
         options[:genre_regexp]=genre_regexp
       end
