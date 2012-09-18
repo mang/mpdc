@@ -46,7 +46,6 @@ class PlaylistCreator
       :db_port => 5432,
       :db_name => 'musiccabinet',
       :dryrun => false,
-      :verbose => false,
       :help => false
     }
   end
@@ -54,15 +53,9 @@ class PlaylistCreator
   def parse_config()
     if File.exist?(@default_values[:config_file])
       config_file=@default_values[:config_file]
-      if @default_values[:verbose]
-        print "Loading config file \"%s\"..." %[@default_values[:config_file]]
-      end
       config=ParseConfig.new(config_file)
       for conf_key in config.get_params do
         @default_values[conf_key.to_sym]=config[conf_key]
-      end
-      if @default_values[:verbose]
-        puts " done"
       end
     end
   end
@@ -116,7 +109,7 @@ class PlaylistCreator
       opts.on('--mpd-port <port>','set the MPD port to <port> (default:6600)') do|mpd_port|
         options[:mpd_port]=mpd_port
       end
-      opts.on('--mpd-password <pswd>','set the MPD password to <pswd>') do|mpd_password|
+      opts.on('--mpd-password <password>','set the MPD password to <password>') do|mpd_password|
         options[:mpd_password]=mpd_password
       end
       opts.on('--db-host <host>','set the database host to <host> (default:localhost)') do|db_host|
@@ -131,11 +124,8 @@ class PlaylistCreator
       opts.on('-u','--db-user <user>','set the database user to <user> (default:postgres)') do|db_user|
         options[:db_user]=db_user
       end
-      opts.on('-p','--db-password <pswd>','set the database pswd to <pswd>') do|db_pswd|
-        options[:db_pswd]=db_pswd
-      end
-      opts.on('-v','--verbose','be more verbose') do
-        options[:verbose]=true
+      opts.on('-p','--db-password <password>','set the database password to <password>') do|db_password|
+        options[:db_password]=db_password
       end
       opts.on('-V','--version','print version') do
         puts "MPDC version 0.1"
@@ -155,14 +145,14 @@ class PlaylistCreator
   end 
 
   def pg_connect()
-    if @options[:db_password].empty?
-      puts "No database password supplied"
-    else
+    begin
       @pg_connection=PG::Connection.new(:host => @options[:db_host],
                                         :port => @options[:db_port],
                                         :dbname => @options[:db_name],
                                         :user => @options[:db_user],
                                         :password => @options[:db_password]);
+    rescue
+      abort("Database connection failed. Please check server parameters");
     end
   end
 
@@ -178,7 +168,8 @@ class PlaylistCreator
     pg_result=@pg_connection.exec('SELECT ma.artist_name_capitalization,ma.id '+
                                   'FROM music.artist ma '+
                                   'INNER JOIN library.artist la ON ma.id=la.artist_id '+
-                                  'WHERE artist_name ~ upper($1)',
+                                  'WHERE artist_name ~ upper($1) '+
+                                  'ORDER BY artist_name',
                                   [@options[:artist]])
     rows=pg_result.count
     if rows>50
